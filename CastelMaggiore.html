@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/nocturne-80352b3f-34e0-407a-9291-76cd380b5048/styles.css">
+  <script src="_ds/nocturne-80352b3f-34e0-407a-9291-76cd380b5048/_ds_bundle.js"></script>
+  <style>
+    /* tema del cinquantesimo: fondo grigio, dettagli verdi e gialli */
+    :root {
+      --color-bg: #d6d7d3;
+      --color-surface: #e6e7e3;
+      --color-text: #1b1f1c;
+      --color-divider: color-mix(in srgb, #1b1f1c 18%, transparent);
+      --color-accent: #2f6b3a;
+      --color-accent-100: #eef5ee; --color-accent-200: #d8e8d9; --color-accent-300: #1d4a27;
+      --color-accent-400: #3f8a4b; --color-accent-500: #2f6b3a; --color-accent-600: #26592f;
+      --color-accent-700: #1d4a27; --color-accent-800: #143318; --color-accent-900: #c9d8c6;
+      --color-accent-2: #b8860b;
+      --color-accent-2-100: #fdf6e0; --color-accent-2-200: #f7e8b8; --color-accent-2-300: #7a5a08;
+      --color-accent-2-400: #d9a520; --color-accent-2-500: #b8860b; --color-accent-2-600: #96700a;
+      --color-accent-2-700: #7a5a08; --color-accent-2-800: #4f3a05; --color-accent-2-900: #f2e3ad;
+      --color-neutral-100: #f4f4f2; --color-neutral-200: #e9e9e6; --color-neutral-300: #d5d6d2;
+      --color-neutral-400: #bcbdb8; --color-neutral-500: #9a9b96; --color-neutral-600: #7b7c77;
+      --color-neutral-700: #b6b7b2; --color-neutral-800: #4a4b47; --color-neutral-900: #2c2d2a;
+    }
+    body { margin: 0; text-wrap: pretty;
+      /* una sola velatura continua: nessun bordo netto, nessuna ripetizione */
+      background-color: var(--color-bg);
+      background-image:
+        radial-gradient(150% 110% at 78% -25%, rgba(217, 165, 32, 0.20), rgba(217, 165, 32, 0) 72%),
+        radial-gradient(130% 100% at -15% 115%, rgba(47, 107, 58, 0.16), rgba(47, 107, 58, 0) 74%);
+      background-repeat: no-repeat;
+      background-attachment: fixed;
+      background-size: cover; }
+    @media (max-width: 980px) {
+      [data-main-grid] { grid-template-columns: 1fr !important; }
+      [data-order-panel] { position: static !important; padding-top: 0 !important; }
+      [data-order-panel] > .card { margin-left: 0 !important; }
+    }
+    @media (max-width: 720px) {
+      [data-article] { grid-template-columns: 1fr !important; }
+    }
+    a { color: var(--color-accent); text-decoration: none; }
+    a:hover { color: var(--color-accent-700); }
+  </style>
+</helmet>
+<div style="font-family: var(--font-body); color: var(--color-text); padding-bottom: 56px; display: block; overflow: visible; width: 100%; height: 100%">
+
+  <nav class="nav" style="padding-inline: clamp(20px, 5vw, 72px); flex-direction: column; align-items: center; gap: 12px; padding-block: 24px; display: inline">
+    
+    
+  <span class="nav-brand" style="display: flex; flex-direction: column; align-items: center; gap: 10px; font-size: 26px; line-height: 32px; text-align: center; height: 200px"><img src="assets/logo-mark.png" alt="Stemma del Gruppo Scout Castel Maggiore 1" style="height: 200px; width: auto; mix-blend-mode: multiply"></span></nav>
+
+  <header style="max-width: 1200px; margin: 0 auto; padding: 84px clamp(20px, 5vw, 72px) 56px">
+    <h1 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: clamp(40px, 5.6vw, 76px); line-height: 1.08; letter-spacing: -0.015em; margin: 0 0 24px; margin-left: -0.06em">Cinquant’anni di strada,<br>da portare addosso.</h1>
+    <p style="font-size: 17px; line-height: 28px; max-width: 56ch; margin: 0; color: color-mix(in srgb, var(--color-text) 82%, transparent)">Il gruppo compie cinquant’anni e li festeggia con una linea di capi e gadget disegnati per l’occasione. Scegli colore, taglia e quantità, poi conferma la prenotazione: ti diamo un codice, e si paga e si ritira in sede.</p>
+    <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px">
+      <span class="tag tag-accent-2" style="font-size: 16px; line-height: 24px; padding: 6px 14px">{{ scadenzaLabel }}</span>
+      <span class="tag tag-outline" style="font-size: 16px; line-height: 24px; padding: 6px 14px">{{ ritiro }}</span>
+    </div>
+  </header>
+
+  <hr class="hr" style="max-width: 1200px; margin: 0 auto">
+
+  <div data-main-grid="" style="max-width: 1200px; margin: 0 auto; padding: 0 clamp(20px, 5vw, 72px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); gap: clamp(28px, 4vw, 64px); align-items: start">
+
+    <section id="articoli" style="padding: 48px 0 0">
+      <span style="display: flex; align-items: center; gap: 12px; font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; color: var(--color-accent-300); margin-bottom: 28px"><span style="width: 44px; height: 2px; background: var(--color-accent-2-400)"></span>Gli articoli</span>
+      <div style="display: flex; margin: -12px 0 28px">
+        <button type="button" class="btn btn-secondary" onClick="{{ onGuideOpen }}">Guida taglie</button>
+      </div>
+
+      <sc-for list="{{ items }}" as="it" hint-placeholder-count="4">
+        <article data-article="" style="display: grid; grid-template-columns: minmax(160px, 260px) minmax(0, 1fr); gap: 28px; padding: 28px 0; border-top: 1px solid var(--color-neutral-700)">
+          <button type="button" style="{{ it.tileStyle }}" onClick="{{ it.onOpenImage }}" title="Ingrandisci">
+            <img src="{{ it.img }}" alt="{{ it.alt }}" style="{{ it.imgStyle }}">
+          </button>
+          <div>
+            <div style="display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 12px">
+              <h2 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 24px; line-height: 28px; letter-spacing: -0.01em; margin: 0">{{ it.name }}</h2>
+              <p style="font-family: var(--font-heading); font-size: 17px; line-height: 28px; margin: 0; color: var(--color-accent); font-feature-settings: 'tnum' 1">{{ it.priceLabel }}</p>
+            </div>
+            <p style="font-size: 14px; line-height: 24px; margin: 8px 0 20px; color: color-mix(in srgb, var(--color-text) 66%, transparent)">{{ it.note }}</p>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px">
+              <sc-for list="{{ it.colorOpts }}" as="c" hint-placeholder-count="2">
+                <button type="button" class="btn btn-ghost" style="{{ c.style }}" onClick="{{ c.onClick }}">{{ c.label }}</button>
+              </sc-for>
+            </div>
+
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end">
+              <label class="field" style="min-width: 168px">
+                <span>Taglia</span>
+                <select class="input" onChange="{{ it.onSize }}">
+                  <sc-for list="{{ it.sizeOpts }}" as="s" hint-placeholder-count="6">
+                    <option value="{{ s.value }}" selected="{{ s.selected }}">{{ s.value }}</option>
+                  </sc-for>
+                </select>
+              </label>
+              <label class="field" style="width: 92px">
+                <span>Quantità</span>
+                <input class="input" type="number" min="1" max="20" value="{{ it.qty }}" onChange="{{ it.onQty }}">
+              </label>
+              <button type="button" class="btn btn-primary" onClick="{{ it.onAdd }}">Aggiungi</button>
+            </div>
+          </div>
+        </article>
+      </sc-for>
+    </section>
+
+    <aside id="prenota" data-order-panel="" style="position: sticky; top: 24px; padding: 48px 0 0">
+      <div class="card elev-md" style="padding: 28px; margin-left: 12px">
+        <p class="card-kicker">La tua prenotazione</p>
+        <h2 class="card-title" style="margin-bottom: 16px">{{ panelTitle }}</h2>
+
+        <sc-if value="{{ confirmed }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 16px">
+            <p style="font-size: 15px; line-height: 24px; margin: 0">Prenotazione registrata. Il tuo codice:</p>
+            <p style="font-family: var(--font-heading); font-size: 26px; line-height: 32px; margin: 0; color: var(--color-accent-300); font-feature-settings: 'tnum' 1">{{ code }}</p>
+            <div style="display: grid; gap: 6px; padding: 16px 0; border-top: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider)">
+              <sc-for list="{{ confirmedRows }}" as="c" hint-placeholder-count="2">
+                <p style="font-size: 14px; line-height: 22px; margin: 0">{{ c.line }}</p>
+              </sc-for>
+            </div>
+            <p style="font-size: 14px; line-height: 22px; margin: 0; color: color-mix(in srgb, var(--color-text) 72%, transparent)">Ci pensiamo noi: la tua prenotazione è nell’elenco del gruppo. {{ ritiro }}, entro il {{ scadenza }}. Conserva il codice per il ritiro.</p>
+            <button type="button" class="btn btn-ghost btn-block" onClick="{{ onReset }}">Fai un’altra prenotazione</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ pending }}" hint-placeholder-val="{{ true }}">
+
+        <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ true }}">
+          <p style="font-size: 14px; line-height: 24px; margin: 0; color: color-mix(in srgb, var(--color-text) 60%, transparent)">Nessun articolo. Scegli colore e taglia, poi premi Aggiungi.</p>
+        </sc-if>
+
+        <sc-if value="{{ hasRows }}" hint-placeholder-val="{{ false }}">
+          <div style="display: grid; gap: 12px">
+            <sc-for list="{{ rows }}" as="r" hint-placeholder-count="2">
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: baseline; padding-bottom: 12px; border-bottom: 1px solid var(--color-divider)">
+                <div>
+                  <p style="font-size: 14px; line-height: 20px; margin: 0">{{ r.name }}</p>
+                  <p style="font-size: 13px; line-height: 20px; margin: 0; color: color-mix(in srgb, var(--color-text) 60%, transparent)">{{ r.detail }}</p>
+                </div>
+                <p style="font-size: 14px; line-height: 20px; margin: 0; font-feature-settings: 'tnum' 1">{{ r.amount }}</p>
+                <button type="button" class="btn btn-ghost" style="padding: 2px 8px; min-height: 0" aria-label="Rimuovi" onClick="{{ r.onRemove }}">×</button>
+              </div>
+            </sc-for>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 12px; margin-top: 16px">
+            <p style="font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; margin: 0; color: color-mix(in srgb, var(--color-text) 64%, transparent)">{{ totalPieces }}</p>
+            <p style="font-family: var(--font-heading); font-size: 20px; margin: 0; font-feature-settings: 'tnum' 1">{{ totalLabel }}</p>
+          </div>
+        </sc-if>
+
+        <div style="display: grid; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-divider)">
+          <label class="field"><span>Nome e cognome</span><input class="input" type="text" onInput="{{ onNome }}"></label>
+          
+          <label class="field"><span>Telefono o email</span><input class="input" type="text" onInput="{{ onContatto }}"></label>
+          <label class="field"><span>Note</span><input class="input" type="text" placeholder="Taglie bambino, richieste…" onInput="{{ onNote }}"></label>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 20px">
+          <button type="button" class="btn btn-primary btn-block" onClick="{{ onConfirm }}">{{ confirmLabel }}</button>
+          <p style="font-size: 13px; line-height: 20px; margin: 0; color: color-mix(in srgb, var(--color-text) 60%, transparent)">{{ helpText }}</p>
+        </div>
+        </sc-if>
+      </div>
+    </aside>
+  </div>
+
+  <sc-if value="{{ zoomOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="position: fixed; inset: 0; z-index: 50; display: flex; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto" onClick="{{ onZoomClose }}">
+      <div class="dialog" style="max-width: 900px; width: 100%; margin: auto; padding: 20px; display: grid; gap: 16px" onClick="{{ stopClick }}">
+        <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 16px">
+          <p style="font-family: var(--font-heading); font-size: 20px; margin: 0">{{ zoomTitle }}</p>
+          <p style="font-size: 14px; margin: 0; color: color-mix(in srgb, var(--color-text) 66%, transparent)">{{ zoomColor }}</p>
+        </div>
+        <div style="background: var(--color-neutral-100); border-radius: var(--radius-md); overflow: hidden; display: flex; align-items: center; justify-content: center" onMouseMove="{{ onZoomMove }}" onTouchMove="{{ onZoomMove }}" onWheel="{{ onZoomWheel }}" onDoubleClick="{{ onZoomToggle }}">
+          <img src="{{ zoomSrc }}" alt="{{ zoomAlt }}" style="{{ zoomImgStyle }}">
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+          <div style="display: flex; align-items: center; gap: 8px">
+            <button type="button" class="btn btn-ghost" onClick="{{ onZoomOut }}" aria-label="Riduci">−</button>
+            <span style="font-size: 14px; min-width: 56px; text-align: center; font-feature-settings: 'tnum' 1">{{ zoomLevelLabel }}</span>
+            <button type="button" class="btn btn-ghost" onClick="{{ onZoomIn }}" aria-label="Ingrandisci">+</button>
+            <span style="font-size: 13px; color: color-mix(in srgb, var(--color-text) 60%, transparent)">Muovi il puntatore per spostarti, doppio clic per ingrandire</span>
+          </div>
+          <button type="button" class="btn btn-primary" onClick="{{ onZoomClose }}">Chiudi</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ guideOpen }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="position: fixed; inset: 0; z-index: 40; display: flex; align-items: flex-start; justify-content: center; padding: 24px; overflow-y: auto">
+      <div class="dialog" style="max-width: 640px; width: 100%; padding: 28px; margin: auto; max-height: calc(100dvh - 48px); overflow-y: auto">
+        <h2 class="dialog-title" style="margin: 0 0 8px">Guida taglie</h2>
+        <p style="font-size: 14px; line-height: 22px; margin: 0 0 20px; color: color-mix(in srgb, var(--color-text) 70%, transparent)">Misure del capo steso, in centimetri: lunghezza dalla spalla all&rsquo;orlo e larghezza sotto le maniche. Il modo pi&ugrave; sicuro &egrave; misurare un capo che veste bene e confrontarlo.</p>
+
+        <table class="table">
+          <thead>
+            <tr><th>Taglia</th><th>Lunghezza</th><th>Larghezza</th></tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ guideAdults }}" as="g" hint-placeholder-count="9">
+              <tr><td>{{ g.t }}</td><td>{{ g.h }}</td><td>{{ g.w }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+
+        <h3 style="font-family: var(--font-heading); font-weight: var(--font-heading-weight); font-size: 17px; margin: 28px 0 12px">Taglie bambino</h3>
+        <table class="table">
+          <thead>
+            <tr><th>Taglia</th><th>Lunghezza</th><th>Larghezza</th></tr>
+          </thead>
+          <tbody>
+            <sc-for list="{{ guideKids }}" as="g" hint-placeholder-count="4">
+              <tr><td>{{ g.t }}</td><td>{{ g.h }}</td><td>{{ g.w }}</td></tr>
+            </sc-for>
+          </tbody>
+        </table>
+        <p style="font-size: 13px; line-height: 20px; margin: 12px 0 0; color: color-mix(in srgb, var(--color-text) 62%, transparent)">* Misure ricavate per estensione della tabella del fornitore (5/6 anni, 4XL, 5XL).</p>
+
+        <div class="dialog-actions" style="margin-top: 24px">
+          <button type="button" class="btn btn-primary" onClick="{{ onGuideClose }}">Chiudi</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <footer style="max-width: 1200px; margin: 48px auto 0; padding: 24px clamp(20px, 5vw, 72px) 0; font-size: 13px; line-height: 28px; color: color-mix(in srgb, var(--color-text) 55%, transparent)">Gruppo Scout Castel Maggiore 1 — 1976–2026. Cinquantesimo anniversario.</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;scadenza&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot; 3 settembre&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Ordini&quot;},&quot;ritiro&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Pagamento e ritiro in sede&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Ordini&quot;},&quot;endpointOrdini&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;https://docs.google.com/spreadsheets/d/1L0hoUiPfWblzM1LCuP4kzQcBvMNfLUjkDaMAikvmhmI/edit?usp=sharing&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Ordini&quot;},&quot;prezzoFelpa&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoFullzip&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:11,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoPile&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoGilet&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoTshirt&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoTotebag&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;},&quot;prezzoPatch&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1,&quot;min&quot;:0,&quot;max&quot;:200,&quot;unit&quot;:&quot;€&quot;,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Prezzi (0 = da definire)&quot;}}">
+class Component extends DCLogic {
+  state = { sel: {}, rows: [], form: {}, copied: false, code: null, sending: false, error: null, sentRows: [] };
+
+  catalog = [
+    { id: 'felpa', name: 'Felpa con cappuccio', priceKey: 'prezzoFelpa',
+      note: 'Cotone garzato, stampa grande sul retro. Taglie XS\u20135XL e misure bambino.',
+      colors: [{ label: 'Bordeaux', img: 'assets/felpa-bordeaux.jpg' }, { label: 'Beige', img: 'assets/felpa-beige.jpg' }], baby: true },
+    { id: 'fullzip', name: 'Felpa full zip', priceKey: 'prezzoFullzip',
+      note: 'Con cappuccio e zip intera, logo sul petto. Taglie XS\u20135XL e misure bambino.',
+      colors: [{ label: 'Bordeaux', img: 'assets/fullzip-bordeaux.jpg' }, { label: 'Blu navy', img: 'assets/fullzip-navy.jpg' }], baby: true },
+    { id: 'pile', name: 'Pile full zip', priceKey: 'prezzoPile',
+      note: 'Pile caldo con tasche, ricamo sul petto e stampa sul retro. Taglie XS\u20135XL.',
+      colors: [{ label: 'Grigio scuro', img: 'assets/pile-grigio.jpg' }, { label: 'Verde', img: 'assets/pile-verde.jpg' }], baby: false },
+    { id: 'gilet', name: 'Gilet in pile', priceKey: 'prezzoGilet',
+      note: 'Senza maniche, da mettere sopra la camicia. Taglie XS\u20135XL.',
+      colors: [{ label: 'Nero', img: 'assets/gilet-nero.jpg' }, { label: 'Blu navy', img: 'assets/gilet-navy.jpg' }], baby: false },
+    { id: 'tshirt', name: 'T-shirt', priceKey: 'prezzoTshirt',
+      note: 'Cotone, logo del cinquantesimo sul davanti. Taglie XS\u20135XL e misure bambino.',
+      colors: [{ label: 'Azzurra', img: 'assets/tshirt-azzurra.jpg' }, { label: 'Bianca', img: 'assets/tshirt-bianca.jpg' }], baby: true },
+    { id: 'totebag', name: 'Totebag', priceKey: 'prezzoTotebag',
+      note: 'Borsa in tela con l\u2019albero del cinquantesimo. Taglia unica.',
+      colors: [{ label: 'Naturale', img: 'assets/totebag-crop.jpg' }], baby: false, unica: true },
+    { id: 'patch', name: 'Patch', priceKey: 'prezzoPatch',
+      note: 'Toppa ricamata da cucire sull\u2019uniforme. Taglia unica.',
+      colors: [{ label: 'Ricamata', img: 'assets/patch-50.jpg' }], baby: false, unica: true }
+  ];
+
+  adultSizes = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL'];
+  babySizes = ['5/6 anni', '7/8 anni', '9/11 anni', '12/14 anni'];
+
+  guideAdults = [
+    { t: 'XS', h: '66', w: '46' },
+    { t: 'S', h: '69', w: '49' },
+    { t: 'M', h: '72', w: '52' },
+    { t: 'L', h: '74', w: '55' },
+    { t: 'XL', h: '76', w: '58' },
+    { t: 'XXL', h: '78', w: '61' },
+    { t: '3XL', h: '80', w: '64' },
+    { t: '4XL', h: '82*', w: '67*' },
+    { t: '5XL', h: '84*', w: '70*' }
+  ];
+  guideKids = [
+    { t: '5/6 anni', h: '53,4*', w: '43,1*' },
+    { t: '7/8 anni', h: '57,2', w: '45,7' },
+    { t: '9/11 anni', h: '61', w: '48,3' },
+    { t: '12/14 anni', h: '64,8', w: '50,8' }
+  ];
+
+  sizesFor(it) {
+    if (it.unica) return ['Taglia unica'];
+    return it.baby ? this.adultSizes.concat(this.babySizes) : this.adultSizes;
+  }
+
+  sel(it) {
+    const s = this.state.sel[it.id] || {};
+    return { color: s.color || it.colors[0].label, size: s.size || this.sizesFor(it)[0], qty: s.qty || 1 };
+  }
+
+  setSel(id, patch) {
+    this.setState(st => ({ sel: Object.assign({}, st.sel, { [id]: Object.assign({}, st.sel[id], patch) }), copied: false }));
+  }
+
+  price(it) { const v = Number(this.props[it.priceKey] || 0); return v > 0 ? v : null; }
+
+  euro(n) { return n.toFixed(2).replace('.', ',') + ' \u20ac'; }
+
+  add(it) {
+    const s = this.sel(it);
+    const key = it.id + '|' + s.color + '|' + s.size;
+    this.setState(st => {
+      const rows = st.rows.slice();
+      const i = rows.findIndex(r => r.key === key);
+      if (i >= 0) rows[i] = Object.assign({}, rows[i], { qty: Math.min(40, rows[i].qty + s.qty) });
+      else rows.push({ key: key, id: it.id, name: it.name, color: s.color, size: s.size, qty: s.qty });
+      return { rows: rows, sel: Object.assign({}, st.sel, { [it.id]: Object.assign({}, st.sel[it.id], { qty: 1 }) }), copied: false };
+    });
+  }
+
+  summaryText() {
+    const f = this.state.form;
+    const lines = ['PRENOTAZIONE 50\u00b0 \u2014 Gruppo Scout Castel Maggiore 1', ''];
+    this.state.rows.forEach(r => {
+      lines.push('\u2022 ' + r.qty + '\u00d7 ' + r.name + ' \u2014 ' + r.color + ', taglia ' + r.size);
+    });
+    const t = this.totals();
+    lines.push('', 'Totale pezzi: ' + t.pieces, 'Totale: ' + t.label, '');
+    lines.push('Nome: ' + (f.nome || '-'));
+    lines.push('Unit\u00e0: ' + (f.unita || '-'));
+    lines.push('Contatto: ' + (f.contatto || '-'));
+    if (f.note) lines.push('Note: ' + f.note);
+    return lines.join('\n');
+  }
+
+  totals() {
+    let pieces = 0, sum = 0, complete = this.state.rows.length > 0;
+    this.state.rows.forEach(r => {
+      pieces += r.qty;
+      const it = this.catalog.find(c => c.id === r.id);
+      const p = this.price(it);
+      if (p === null) complete = false; else sum += p * r.qty;
+    });
+    return { pieces: pieces, label: complete ? this.euro(sum) : 'da definire' };
+  }
+
+  componentDidMount() {
+    this._esc = e => { if (e.key === 'Escape') this.setState({ zoom: null, guide: false }); };
+    document.addEventListener('keydown', this._esc);
+  }
+  componentWillUnmount() { document.removeEventListener('keydown', this._esc); }
+
+  renderVals() {
+    const scadenza = String(this.props.scadenza || '3 settembre').trim();
+    const scadenzaLabel = 'Prenotazioni entro il ' + scadenza;
+    const ritiro = this.props.ritiro || 'Pagamento e ritiro in sede';
+    const t = this.totals();
+
+    const items = this.catalog.map(it => {
+      const s = this.sel(it);
+      const p = this.price(it);
+      const colorOpts = it.colors.map(c => ({
+        label: c.label,
+        onClick: () => this.setSel(it.id, { color: c.label }),
+        style: c.label === s.color
+          ? { borderColor: 'var(--color-accent)', color: 'var(--color-accent)', background: 'color-mix(in srgb, var(--color-accent) 14%, transparent)' }
+          : {}
+      }));
+      const chosen = it.colors.find(c => c.label === s.color) || it.colors[0];
+      const dark = false;
+      return {
+        tileStyle: { background: dark ? '#1b1f1c' : 'var(--color-neutral-100)', borderRadius: 'var(--radius-md)', overflow: 'hidden', aspectRatio: '4 / 3', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'zoom-in', border: 'none', padding: 0, width: '100%' },
+        onOpenImage: () => this.setState({ zoom: { src: chosen.img, alt: it.name + ' \u2014 ' + chosen.label, name: it.name, color: chosen.label }, zLevel: 1, zOx: 50, zOy: 50 }),
+        imgStyle: { width: '100%', height: '100%', objectFit: 'contain', mixBlendMode: dark ? 'normal' : 'multiply' },
+        name: it.name,
+        note: it.note,
+        img: chosen.img,
+        alt: it.name + ' ' + chosen.label,
+        priceLabel: p === null ? 'prezzo da definire' : this.euro(p),
+        colorOpts: colorOpts,
+        sizeOpts: this.sizesFor(it).map(v => ({ value: v, selected: v === s.size })),
+        qty: s.qty,
+        onSize: e => this.setSel(it.id, { size: e.target.value }),
+        onQty: e => this.setSel(it.id, { qty: Math.max(1, Math.min(20, Number(e.target.value) || 1)) }),
+        onAdd: () => this.add(it)
+      };
+    });
+
+    const field = k => e => { this.state.form[k] = e.target.value; this.setState({ copied: false }); };
+
+    return {
+      scadenza: scadenza, scadenzaLabel: scadenzaLabel, ritiro: ritiro, items: items,
+      guideOpen: !!this.state.guide,
+      zoomOpen: !!this.state.zoom,
+      zoomSrc: this.state.zoom ? this.state.zoom.src : '',
+      zoomAlt: this.state.zoom ? this.state.zoom.alt : '',
+      zoomTitle: this.state.zoom ? this.state.zoom.name : '',
+      zoomColor: this.state.zoom ? this.state.zoom.color : '',
+      onZoomClose: () => this.setState({ zoom: null, zLevel: 1 }),
+      stopClick: e => e.stopPropagation(),
+      zoomImgStyle: {
+        width: '100%', maxHeight: '68dvh', objectFit: 'contain', mixBlendMode: 'multiply',
+        transform: 'scale(' + (this.state.zLevel || 1) + ')',
+        transformOrigin: (this.state.zOx == null ? 50 : this.state.zOx) + '% ' + (this.state.zOy == null ? 50 : this.state.zOy) + '%',
+        transition: 'transform 120ms ease-out',
+        cursor: (this.state.zLevel || 1) > 1 ? 'move' : 'zoom-in'
+      },
+      zoomLevelLabel: Math.round((this.state.zLevel || 1) * 100) + '%',
+      onZoomIn: () => this.setState(st => ({ zLevel: Math.min(5, (st.zLevel || 1) + 0.5) })),
+      onZoomOut: () => this.setState(st => ({ zLevel: Math.max(1, (st.zLevel || 1) - 0.5) })),
+      onZoomToggle: () => this.setState(st => ({ zLevel: (st.zLevel || 1) > 1 ? 1 : 2.5, zOx: 50, zOy: 50 })),
+      onZoomMove: e => {
+        if ((this.state.zLevel || 1) <= 1) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const pt = e.touches && e.touches[0] ? e.touches[0] : e;
+        this.setState({
+          zOx: Math.max(0, Math.min(100, ((pt.clientX - r.left) / r.width) * 100)),
+          zOy: Math.max(0, Math.min(100, ((pt.clientY - r.top) / r.height) * 100))
+        });
+      },
+      onZoomWheel: e => {
+        e.preventDefault();
+        this.setState(st => ({ zLevel: Math.max(1, Math.min(5, (st.zLevel || 1) + (e.deltaY < 0 ? 0.4 : -0.4))) }));
+      },
+      guideAdults: this.guideAdults, guideKids: this.guideKids,
+      onGuideOpen: () => this.setState({ guide: true }),
+      onGuideClose: () => this.setState({ guide: false }),
+      rows: this.state.rows.map(r => ({
+        name: r.name,
+        detail: r.color + ' \u00b7 ' + r.size,
+        amount: r.qty + '\u00d7',
+        onRemove: () => this.setState(st => ({ rows: st.rows.filter(x => x.key !== r.key), copied: false }))
+      })),
+      isEmpty: this.state.rows.length === 0,
+      hasRows: this.state.rows.length > 0,
+      totalPieces: t.pieces + (t.pieces === 1 ? ' pezzo' : ' pezzi'),
+      totalLabel: t.label,
+      copyLabel: this.state.copied ? 'Foglio scaricato' : 'Scarica il foglio ordine',
+      onNome: field('nome'), onUnita: field('unita'), onContatto: field('contatto'), onNote: field('note'),
+      panelTitle: this.state.code ? 'Confermata' : 'Carrello',
+      confirmed: !!this.state.code,
+      pending: !this.state.code,
+      code: this.state.code,
+      confirmedRows: this.state.sentRows.map(r => ({ line: r.qty + '\u00d7 ' + r.name + ' \u2014 ' + r.color + ', ' + r.size })),
+      confirmLabel: this.state.sending ? 'Invio in corso\u2026' : 'Conferma la prenotazione',
+      helpText: this.state.error
+        ? this.state.error
+        : (this.state.rows.length === 0
+            ? 'Aggiungi almeno un articolo, poi conferma: la prenotazione arriva ai capi.'
+            : 'Conferma e ti diamo un codice. ' + ritiro + ', entro il ' + scadenza + '.'),
+      onReset: () => this.setState({ rows: [], code: null, sentRows: [], error: null }),
+      onConfirm: () => {
+        const f = this.state.form;
+        if (this.state.rows.length === 0) { this.setState({ error: 'Aggiungi almeno un articolo prima di confermare.' }); return; }
+        if (!f.nome || !f.contatto) { this.setState({ error: 'Servono nome e un contatto (telefono o email).' }); return; }
+        const code = 'CM1-50-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+        const rows = this.state.rows.slice();
+        const payload = {
+          codice: code, data: new Date().toISOString(),
+          nome: f.nome, unita: f.unita || '', contatto: f.contatto, note: f.note || '',
+          totale: this.totals().label,
+          articoli: rows.map(r => {
+            const p = this.price(this.catalog.find(c => c.id === r.id));
+            return { articolo: r.name, colore: r.color, taglia: r.size, quantita: r.qty, prezzo: p === null ? '' : p };
+          })
+        };
+        const raw = this.props.endpointOrdini || '';
+        const url = /script\.google\.com\/macros\/s\//.test(raw) ? raw : '';
+        const done = () => this.setState({ code: code, sentRows: rows, sending: false, error: null });
+        if (url) {
+          this.setState({ sending: true, error: null });
+          fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify(payload) })
+            .then(done, () => this.setState({ sending: false, error: 'Invio non riuscito: riprova o avvisa i capi.' }));
+        } else { done(); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>
