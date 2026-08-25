@@ -505,7 +505,7 @@ class Component extends DCLogic {
       totalPieces: t.pieces + (t.pieces === 1 ? ' pezzo' : ' pezzi'),
       totalLabel: t.label,
       copyLabel: this.state.copied ? 'Foglio scaricato' : 'Scarica il foglio ordine',
-      onNome: field('nome'), onUnita: field('unita'), onContatto: field('contatto'), onNote: field('note'),
+      onNome: field('nome'), onContatto: field('contatto'), onNote: field('note'),
       panelTitle: this.state.code ? 'Confermata' : 'Carrello',
       confirmed: !!this.state.code,
       pending: !this.state.code,
@@ -526,7 +526,7 @@ class Component extends DCLogic {
         const rows = this.state.rows.slice();
         const payload = {
           codice: code, data: new Date().toISOString(),
-          nome: f.nome, unita: f.unita || '', contatto: f.contatto, note: f.note || '',
+          nome: f.nome, contatto: f.contatto, note: f.note || '',
           totale: this.totals().label,
           articoli: rows.map(r => {
             const p = this.price(this.catalog.find(c => c.id === r.id));

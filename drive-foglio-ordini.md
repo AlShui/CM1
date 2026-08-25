@@ -6,7 +6,7 @@ autorizza una volta. Dieci minuti, si fa dal browser.
 ## 1. Crea il foglio
 1. Su Google Drive (account del gruppo) crea un nuovo **Foglio Google**, nome es. `Ordini 50° — Castel Maggiore 1`.
 2. Prima riga come intestazione:
-   `Data | Codice | Nome | Unità | Contatto | Articolo | Colore | Taglia | Quantità | Prezzo | Note`
+   `Data | Codice | Nome | Contatto | Articolo | Colore | Taglia | Quantità | Prezzo | Note`
 3. Condivisione: lascia **Con limitazioni** e aggiungi solo le persone invitate (i capi).
    Chi prenota non vede il foglio: riceve solo la conferma con il codice.
 
@@ -25,7 +25,11 @@ per scrivere due righe invece di una — senza il blocco, entrambi potrebbero le
 
 > **Se avevi già incollato una versione precedente di questo script**, sostituiscila con questa:
 > aggiunge il blocco anti-doppioni e non si blocca più su un payload malformato (prima, un invio
-> troncato o corrotto faceva fallire l'intera esecuzione invece di limitarsi a scartarlo).
+> troncato o corrotto faceva fallire l'intera esecuzione invece di limitarsi a scartarlo). Toglie
+> anche la colonna **Unità**, che il modulo di prenotazione non ha mai raccolto: la versione
+> precedente scriveva comunque 11 valori su un foglio con 10 intestazioni, spostando di una
+> colonna tutto quello che viene dopo "Nome" (contatto sotto "Articolo", articolo sotto "Colore",
+> ecc.) — se hai già delle righe scritte con la vecchia versione, controllale a mano.
 
 ```js
 function handle(raw) {
@@ -49,7 +53,7 @@ function handle(raw) {
     }
 
     (d.articoli || []).forEach(function (a) {
-      sh.appendRow([new Date(), d.codice, d.nome, d.unita, d.contatto,
+      sh.appendRow([new Date(), d.codice, d.nome, d.contatto,
                     a.articolo, a.colore, a.taglia, a.quantita, a.prezzo, d.note]);
     });
     return ContentService.createTextOutput('ok');
