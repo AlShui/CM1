@@ -29,9 +29,13 @@ per scrivere due righe invece di una — senza il blocco, entrambi potrebbero le
 > anche la colonna **Unità**, che il modulo di prenotazione non ha mai raccolto: la versione
 > precedente scriveva comunque 11 valori su un foglio con 10 intestazioni, spostando di una
 > colonna tutto quello che viene dopo "Nome" (contatto sotto "Articolo", articolo sotto "Colore",
-> ecc.) — se hai già delle righe scritte con la vecchia versione, controllale a mano.
+> ecc.) — se hai già delle righe scritte con la vecchia versione, controllale a mano. Manda anche
+> un'email con il PDF della prenotazione a un indirizzo fisso (variabile `EMAIL_DESTINATARIO` in
+> cima allo script): cambia quel valore se vuoi che vada a un indirizzo diverso.
 
 ```js
+var EMAIL_DESTINATARIO = 'gastaniscorrazza@gmail.com';
+
 function handle(raw) {
   if (!raw) return ContentService.createTextOutput('vuoto');
   var d;
@@ -40,7 +44,8 @@ function handle(raw) {
 
   // Blocco: i tre canali (fetch, modulo, GET) mandano lo stesso ordine quasi in
   // contemporanea. Senza questo lock, due esecuzioni potrebbero leggere il foglio
-  // prima che l'altra abbia scritto e finire per duplicare la riga.
+  // prima che l'altra abbia scritto e finire per duplicare la riga (e mandare due
+  // email per lo stesso ordine).
   var lock = LockService.getScriptLock();
   lock.waitLock(30000);
   try {
@@ -56,6 +61,23 @@ function handle(raw) {
       sh.appendRow([new Date(), d.codice, d.nome, d.contatto,
                     a.articolo, a.colore, a.taglia, a.quantita, a.prezzo, d.note]);
     });
+
+    // Email con il PDF allegato: un fallimento qui (quota mail esaurita,
+    // indirizzo non valido, ecc.) non deve mai far sparire la riga già scritta
+    // sopra, quindi è isolato nel suo try/catch.
+    try {
+      var attachments = [];
+      if (d.pdfBase64) {
+        attachments.push(Utilities.newBlob(Utilities.base64Decode(d.pdfBase64), 'application/pdf', 'prenotazione-' + d.codice + '.pdf'));
+      }
+      MailApp.sendEmail({
+        to: EMAIL_DESTINATARIO,
+        subject: 'Nuova prenotazione 50° — ' + d.codice,
+        body: d.resoconto || ('Codice: ' + d.codice),
+        attachments: attachments
+      });
+    } catch (e) {}
+
     return ContentService.createTextOutput('ok');
   } finally {
     lock.releaseLock();
@@ -95,7 +117,9 @@ problema è nella distribuzione (qui) o nella pagina.
    (è lo stesso payload di test, già codificato — copia e incolla l'URL intero).
 2. Premi Invio. Guarda cosa restituisce la pagina:
    - **`ok`** in testo semplice → la distribuzione funziona, e dovresti trovare una riga `TEST-1`
-     nel foglio (cancellala dopo). Passa al punto 5.
+     nel foglio (cancellala dopo). Questo test minimo non include il PDF (non c'è nella query di
+     prova), ma l'email parte comunque, senza allegato: controlla che sia arrivata a
+     `EMAIL_DESTINATARIO` come ulteriore conferma che tutta la catena funziona. Passa al punto 5.
    - **Una pagina di login Google / "Accedi"** → l'accesso della distribuzione non è su **Tutti**.
      Torna al punto 3.
    - **Errore Apps Script (schermata rossa, "Eccezione…")** → il codice ha un problema; controlla
@@ -119,3 +143,11 @@ Cause tipiche, in ordine di frequenza:
 - script non ridistribuito dopo una modifica (vedi punto 3);
 - accesso della distribuzione non impostato su **Tutti**;
 - URL incollato con `/dev` invece di `/exec`, o il link del foglio invece dello script.
+
+## Se il foglio si aggiorna ma l'email no
+L'invio email è isolato nel suo try/catch: un problema lì (quota giornaliera di `MailApp`
+esaurita — circa 100 al giorno su un account Google normale, allegato troppo grande, indirizzo in
+`EMAIL_DESTINATARIO` scritto male) non fa mai sparire la riga sul foglio, quindi il foglio resta la
+fonte affidabile anche se qualche email non arriva. Controlla **Esecuzioni** nell'editor di Apps
+Script: se l'esecuzione compare senza errori ma l'email non arriva, guarda anche nello spam del
+destinatario.

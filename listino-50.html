@@ -417,21 +417,25 @@ class Component extends DCLogic {
     return pdf;
   }
 
-  downloadOrderPdf() {
-    const code = this.state.code;
-    if (!code) return;
-    const rows = this.state.sentRows || [];
+  // Righe del PDF a partire dai dati di un ordine (non da this.state
+  // direttamente): usato sia per il download su richiesta (dati già in
+  // this.state) sia da onConfirm(), dove l'ordine esiste ancora solo come
+  // variabili locali, prima di finire in stato.
+  orderPdfLines({ code, rows, form, confirmedAt }) {
+    const f = form || {};
+    let sum = 0, complete = rows.length > 0;
     const itemLines = rows.map(r => {
       const it = this.catalog.find(c => c.id === r.id);
       const p = it ? this.price(it) : null;
+      if (p === null) complete = false; else sum += p * r.qty;
       return '  ' + r.qty + 'x ' + r.name + ' - ' + r.color + ', taglia ' + r.size + ' - ' + (p === null ? 'prezzo da definire' : this.euro(p));
     });
-    const f = this.state.form || {};
+    const totalLabel = complete ? this.euro(sum) : 'da definire';
     const lines = [
       { text: 'Prenotazione 50° — Gruppo Scout Castel Maggiore 1', size: 15 },
       { text: '', size: 11 },
       { text: 'Codice: ' + code, size: 14 },
-      { text: 'Data: ' + (this.state.confirmedAt || new Date()).toLocaleString('it-IT'), size: 11 },
+      { text: 'Data: ' + (confirmedAt || new Date()).toLocaleString('it-IT'), size: 11 },
       { text: 'Nome: ' + (f.nome || '').trim(), size: 11 },
       { text: 'Contatto: ' + (f.contatto || '').trim(), size: 11 }
     ];
@@ -440,12 +444,20 @@ class Component extends DCLogic {
     itemLines.forEach(t => lines.push({ text: t, size: 11 }));
     lines.push(
       { text: '', size: 11 },
-      { text: 'Totale: ' + this.totals().label, size: 13 },
+      { text: 'Totale: ' + totalLabel, size: 13 },
       { text: '', size: 11 },
       { text: (this.props.ritiro || 'Pagamento e ritiro in sede') + '.', size: 11 },
       { text: 'Conserva questo codice per il ritiro.', size: 11 }
     );
+    return lines;
+  }
 
+  downloadOrderPdf() {
+    const code = this.state.code;
+    if (!code) return;
+    const lines = this.orderPdfLines({
+      code: code, rows: this.state.sentRows || [], form: this.state.form, confirmedAt: this.state.confirmedAt
+    });
     const pdfStr = this.buildPdfBytes(lines);
     const bytes = new Uint8Array(pdfStr.length);
     for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xff;
@@ -469,18 +481,17 @@ class Component extends DCLogic {
     });
   }
 
-  summaryText() {
+  summaryText(code) {
     const f = this.state.form;
-    const lines = ['PRENOTAZIONE 50\u00b0 \u2014 Gruppo Scout Castel Maggiore 1', ''];
+    const lines = ['PRENOTAZIONE 50\u00b0 \u2014 Gruppo Scout Castel Maggiore 1', 'Codice: ' + code, ''];
     this.state.rows.forEach(r => {
       lines.push('\u2022 ' + r.qty + '\u00d7 ' + r.name + ' \u2014 ' + r.color + ', taglia ' + r.size);
     });
     const t = this.totals();
     lines.push('', 'Totale pezzi: ' + t.pieces, 'Totale: ' + t.label, '');
-    lines.push('Nome: ' + (f.nome || '-'));
-    lines.push('Unit\u00e0: ' + (f.unita || '-'));
-    lines.push('Contatto: ' + (f.contatto || '-'));
-    if (f.note) lines.push('Note: ' + f.note);
+    lines.push('Nome: ' + ((f.nome || '').trim() || '-'));
+    lines.push('Contatto: ' + ((f.contatto || '').trim() || '-'));
+    if ((f.note || '').trim()) lines.push('Note: ' + f.note.trim());
     return lines.join('\n');
   }
 
@@ -660,22 +671,30 @@ class Component extends DCLogic {
         if (!nome || !contatto) { this.setState({ error: 'Nome e cognome e un contatto (telefono o email) sono obbligatori.' }); return; }
         const code = 'CM1-50-' + Math.random().toString(36).slice(2, 6).toUpperCase();
         const rows = this.state.rows.slice();
+        const now = new Date();
         const payload = {
-          codice: code, data: new Date().toISOString(),
+          codice: code, data: now.toISOString(),
           nome: nome, contatto: contatto, note: f.note || '',
           totale: this.totals().label,
           articoli: rows.map(r => {
             const p = this.price(this.catalog.find(c => c.id === r.id));
             return { articolo: r.name, colore: r.color, taglia: r.size, quantita: r.qty, prezzo: p === null ? '' : p };
-          })
+          }),
+          resoconto: this.summaryText(code)
         };
+        // Il PDF allegato all'email è un extra: se per qualche motivo la
+        // generazione fallisse, non deve impedire la scrittura sul foglio.
+        try {
+          const pdfStr = this.buildPdfBytes(this.orderPdfLines({ code: code, rows: rows, form: f, confirmedAt: now }));
+          payload.pdfBase64 = btoa(pdfStr);
+        } catch (e) {}
         const raw = String(this.props.endpointOrdini || '').trim();
         const url = /script\.google\.com\/macros\/s\//.test(raw) ? raw : '';
-        const done = () => this.setState({ code: code, sentRows: rows, confirmedAt: new Date(), sending: false, error: null });
+        const done = () => this.setState({ code: code, sentRows: rows, confirmedAt: now, sending: false, error: null });
         if (url) {
           this.setState({ sending: true, error: null });
           this.send(url, payload).then(done, () => {
-            this.setState({ code: code, sentRows: rows, sending: false,
+            this.setState({ code: code, sentRows: rows, confirmedAt: now, sending: false,
               error: 'Registrata sul dispositivo, ma l\u2019invio automatico non \u00e8 passato: avvisa i capi col codice ' + code + '.' });
           });
         } else { done(); }
