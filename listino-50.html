@@ -146,6 +146,7 @@
             <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
               <p style="font-family: var(--font-heading); font-size: 26px; line-height: 32px; margin: 0; color: var(--color-accent-300); font-feature-settings: 'tnum' 1">{{ code }}</p>
               <button type="button" class="btn btn-ghost" onClick="{{ onCopyCode }}">{{ copyCodeLabel }}</button>
+              <button type="button" class="btn btn-ghost" onClick="{{ onDownloadPdf }}">Scarica PDF</button>
             </div>
             <div style="display: grid; gap: 6px; padding: 16px 0; border-top: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider)">
               <sc-for list="{{ confirmedRows }}" as="c" hint-placeholder-count="2">
@@ -351,6 +352,111 @@ class Component extends DCLogic {
     }
   }
 
+  /* Il PDF viene scritto a mano (nessuna libreria da CDN): un documento di
+     solo testo con il font base Helvetica non richiede altro che oggetti,
+     content stream e una tabella xref corrette. Evita di aggiungere un
+     nuovo punto di fallimento (uno script esterno che potrebbe non
+     caricarsi) in un flusso che deve funzionare sempre. Il font base usa
+     l'encoding WinAnsi: i caratteri fuori da Latin-1 (es. l'€, le
+     virgolette tipografiche) vanno tradotti a mano, altrimenti uscirebbero
+     codificati male. */
+  sanitizePdfText(s) {
+    const map = { '‘': "'", '’': "'", '“': '"', '”': '"', '–': '-', '—': '-', '…': '...', '€': 'EUR' };
+    return String(s == null ? '' : s).split('').map(ch => {
+      if (map[ch]) return map[ch];
+      return ch.codePointAt(0) <= 255 ? ch : '?';
+    }).join('');
+  }
+
+  escPdfText(s) {
+    return this.sanitizePdfText(s).replace(/\\/g, '\\\\').replace(/\(/g, '\\(').replace(/\)/g, '\\)');
+  }
+
+  // lines: [{ text, size }] -> stringa PDF (un byte per carattere, garantito
+  // dal sanitize sopra). Impagina su più pagine se il contenuto non entra.
+  buildPdfBytes(lines) {
+    const PAGE_W = 595, PAGE_H = 842, MARGIN_L = 50, TOP_Y = 792, BOTTOM_Y = 50, LEADING = 16;
+    const pageStreams = [];
+    let cur = [], y = TOP_Y, lastSize = null;
+    const flushPage = () => { pageStreams.push(cur); cur = []; };
+    lines.forEach(line => {
+      if (y < BOTTOM_Y) { flushPage(); y = TOP_Y; lastSize = null; }
+      if (line.size !== lastSize) { cur.push('/F1 ' + line.size + ' Tf'); lastSize = line.size; }
+      cur.push('1 0 0 1 ' + MARGIN_L + ' ' + y + ' Tm');
+      cur.push('(' + this.escPdfText(line.text) + ') Tj');
+      y -= LEADING;
+    });
+    flushPage();
+
+    const objects = [];
+    const catalogIdx = 1, pagesIdx = 2, fontIdx = 3;
+    objects[catalogIdx - 1] = '<< /Type /Catalog /Pages ' + pagesIdx + ' 0 R >>';
+    objects[fontIdx - 1] = '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>';
+    const pageObjIdxs = [];
+    let nextIdx = 4;
+    pageStreams.forEach(streamLines => {
+      const content = 'BT\n' + streamLines.join('\n') + '\nET';
+      const contentIdx = nextIdx++, pageIdx = nextIdx++;
+      objects[contentIdx - 1] = '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream';
+      objects[pageIdx - 1] = '<< /Type /Page /Parent ' + pagesIdx + ' 0 R /MediaBox [0 0 ' + PAGE_W + ' ' + PAGE_H + '] ' +
+        '/Resources << /Font << /F1 ' + fontIdx + ' 0 R >> >> /Contents ' + contentIdx + ' 0 R >>';
+      pageObjIdxs.push(pageIdx);
+    });
+    objects[pagesIdx - 1] = '<< /Type /Pages /Kids [' + pageObjIdxs.map(i => i + ' 0 R').join(' ') + '] /Count ' + pageObjIdxs.length + ' >>';
+
+    let pdf = '%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';
+    const offsets = [0];
+    for (let i = 0; i < objects.length; i++) {
+      offsets.push(pdf.length);
+      pdf += (i + 1) + ' 0 obj\n' + objects[i] + '\nendobj\n';
+    }
+    const xrefStart = pdf.length;
+    pdf += 'xref\n0 ' + (objects.length + 1) + '\n0000000000 65535 f \n';
+    for (let i = 1; i <= objects.length; i++) pdf += String(offsets[i]).padStart(10, '0') + ' 00000 n \n';
+    pdf += 'trailer\n<< /Size ' + (objects.length + 1) + ' /Root ' + catalogIdx + ' 0 R >>\nstartxref\n' + xrefStart + '\n%%EOF';
+    return pdf;
+  }
+
+  downloadOrderPdf() {
+    const code = this.state.code;
+    if (!code) return;
+    const rows = this.state.sentRows || [];
+    const itemLines = rows.map(r => {
+      const it = this.catalog.find(c => c.id === r.id);
+      const p = it ? this.price(it) : null;
+      return '  ' + r.qty + 'x ' + r.name + ' - ' + r.color + ', taglia ' + r.size + ' - ' + (p === null ? 'prezzo da definire' : this.euro(p));
+    });
+    const f = this.state.form || {};
+    const lines = [
+      { text: 'Prenotazione 50° — Gruppo Scout Castel Maggiore 1', size: 15 },
+      { text: '', size: 11 },
+      { text: 'Codice: ' + code, size: 14 },
+      { text: 'Data: ' + (this.state.confirmedAt || new Date()).toLocaleString('it-IT'), size: 11 },
+      { text: 'Nome: ' + (f.nome || '').trim(), size: 11 },
+      { text: 'Contatto: ' + (f.contatto || '').trim(), size: 11 }
+    ];
+    if ((f.note || '').trim()) lines.push({ text: 'Note: ' + f.note.trim(), size: 11 });
+    lines.push({ text: '', size: 11 }, { text: 'Articoli:', size: 12 });
+    itemLines.forEach(t => lines.push({ text: t, size: 11 }));
+    lines.push(
+      { text: '', size: 11 },
+      { text: 'Totale: ' + this.totals().label, size: 13 },
+      { text: '', size: 11 },
+      { text: (this.props.ritiro || 'Pagamento e ritiro in sede') + '.', size: 11 },
+      { text: 'Conserva questo codice per il ritiro.', size: 11 }
+    );
+
+    const pdfStr = this.buildPdfBytes(lines);
+    const bytes = new Uint8Array(pdfStr.length);
+    for (let i = 0; i < pdfStr.length; i++) bytes[i] = pdfStr.charCodeAt(i) & 0xff;
+    const blob = new Blob([bytes], { type: 'application/pdf' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'prenotazione-' + code + '.pdf';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+  }
+
   add(it) {
     const s = this.sel(it);
     const key = it.id + '|' + s.color + '|' + s.size;
@@ -532,6 +638,7 @@ class Component extends DCLogic {
       totalLabel: t.label,
       copyCodeLabel: this.state.copied ? 'Copiato ✓' : 'Copia codice',
       onCopyCode: () => this.copyCode(),
+      onDownloadPdf: () => this.downloadOrderPdf(),
       onNome: field('nome'), onContatto: field('contatto'), onNote: field('note'),
       panelTitle: this.state.code ? 'Confermata' : 'Carrello',
       confirmed: !!this.state.code,
@@ -544,7 +651,7 @@ class Component extends DCLogic {
         : (this.state.rows.length === 0
             ? 'Aggiungi almeno un articolo, poi conferma: la prenotazione arriva ai capi.'
             : 'Conferma e ti diamo un codice. ' + ritiro + '.'),
-      onReset: () => this.setState({ rows: [], code: null, sentRows: [], error: null, copied: false }),
+      onReset: () => this.setState({ rows: [], code: null, sentRows: [], confirmedAt: null, error: null, copied: false }),
       onConfirm: () => {
         const f = this.state.form;
         const nome = (f.nome || '').trim();
@@ -564,7 +671,7 @@ class Component extends DCLogic {
         };
         const raw = String(this.props.endpointOrdini || '').trim();
         const url = /script\.google\.com\/macros\/s\//.test(raw) ? raw : '';
-        const done = () => this.setState({ code: code, sentRows: rows, sending: false, error: null });
+        const done = () => this.setState({ code: code, sentRows: rows, confirmedAt: new Date(), sending: false, error: null });
         if (url) {
           this.setState({ sending: true, error: null });
           this.send(url, payload).then(done, () => {
