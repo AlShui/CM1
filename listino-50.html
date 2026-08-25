@@ -149,7 +149,7 @@
                 <p style="font-size: 14px; line-height: 22px; margin: 0">{{ c.line }}</p>
               </sc-for>
             </div>
-            <p style="font-size: 14px; line-height: 22px; margin: 0; color: color-mix(in srgb, var(--color-text) 72%, transparent)">Ci pensiamo noi: la tua prenotazione è nell’elenco del gruppo. {{ ritiro }}, entro il {{ scadenza }}. Conserva il codice per il ritiro.</p>
+            <p style="font-size: 14px; line-height: 22px; margin: 0; color: color-mix(in srgb, var(--color-text) 72%, transparent)">Ci pensiamo noi: la tua prenotazione è nell’elenco del gruppo. {{ ritiro }}. Conserva il codice per il ritiro.</p>
             <button type="button" class="btn btn-ghost btn-block" onClick="{{ onReset }}">Fai un’altra prenotazione</button>
           </div>
         </sc-if>
@@ -180,9 +180,9 @@
         </sc-if>
 
         <div style="display: grid; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-divider)">
-          <label class="field"><span>Nome e cognome</span><input class="input" type="text" onInput="{{ onNome }}"></label>
-          
-          <label class="field"><span>Telefono o email</span><input class="input" type="text" onInput="{{ onContatto }}"></label>
+          <label class="field"><span>Nome e cognome *</span><input class="input" type="text" required="" onInput="{{ onNome }}"></label>
+
+          <label class="field"><span>Telefono o email *</span><input class="input" type="text" required="" onInput="{{ onContatto }}"></label>
           <label class="field"><span>Note</span><input class="input" type="text" placeholder="Taglie bambino, richieste…" onInput="{{ onNote }}"></label>
         </div>
 
@@ -516,17 +516,19 @@ class Component extends DCLogic {
         ? this.state.error
         : (this.state.rows.length === 0
             ? 'Aggiungi almeno un articolo, poi conferma: la prenotazione arriva ai capi.'
-            : 'Conferma e ti diamo un codice. ' + ritiro + ', entro il ' + scadenza + '.'),
+            : 'Conferma e ti diamo un codice. ' + ritiro + '.'),
       onReset: () => this.setState({ rows: [], code: null, sentRows: [], error: null }),
       onConfirm: () => {
         const f = this.state.form;
+        const nome = (f.nome || '').trim();
+        const contatto = (f.contatto || '').trim();
         if (this.state.rows.length === 0) { this.setState({ error: 'Aggiungi almeno un articolo prima di confermare.' }); return; }
-        if (!f.nome || !f.contatto) { this.setState({ error: 'Servono nome e un contatto (telefono o email).' }); return; }
+        if (!nome || !contatto) { this.setState({ error: 'Nome e cognome e un contatto (telefono o email) sono obbligatori.' }); return; }
         const code = 'CM1-50-' + Math.random().toString(36).slice(2, 6).toUpperCase();
         const rows = this.state.rows.slice();
         const payload = {
           codice: code, data: new Date().toISOString(),
-          nome: f.nome, contatto: f.contatto, note: f.note || '',
+          nome: nome, contatto: contatto, note: f.note || '',
           totale: this.totals().label,
           articoli: rows.map(r => {
             const p = this.price(this.catalog.find(c => c.id === r.id));
