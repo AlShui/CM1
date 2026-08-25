@@ -36,6 +36,14 @@ per scrivere due righe invece di una — senza il blocco, entrambi potrebbero le
 ```js
 var EMAIL_DESTINATARIO = 'gastaniscorrazza@gmail.com';
 
+// Da eseguire una volta sola, a mano, dall'editor (vedi punto 3 sotto) — non
+// viene mai chiamata dalla pagina. Serve solo a far comparire la richiesta di
+// autorizzazione di Google per l'invio email, che una richiesta web non può
+// far comparire da sola.
+function autorizzaInvioEmail() {
+  MailApp.sendEmail(EMAIL_DESTINATARIO, 'Test 50° Castel Maggiore 1', 'Se leggi questa mail, l\'invio automatico funziona.');
+}
+
 function handle(raw) {
   if (!raw) return ContentService.createTextOutput('vuoto');
   var d;
@@ -62,21 +70,29 @@ function handle(raw) {
                     a.articolo, a.colore, a.taglia, a.quantita, a.prezzo, d.note]);
     });
 
-    // Email con il PDF allegato: un fallimento qui (quota mail esaurita,
-    // indirizzo non valido, ecc.) non deve mai far sparire la riga già scritta
-    // sopra, quindi è isolato nel suo try/catch.
-    try {
-      var attachments = [];
-      if (d.pdfBase64) {
+    // Email con il PDF allegato: isolata nel suo try/catch così un problema
+    // qui (allegato non decodificabile, quota mail esaurita, autorizzazione
+    // mancante) non fa mai sparire la riga già scritta sopra. L'errore viene
+    // comunque registrato nei log (Esecuzioni, nell'editor di Apps Script):
+    // altrimenti "non arriva la mail" non si può capire perché.
+    var attachments = [];
+    if (d.pdfBase64) {
+      try {
         attachments.push(Utilities.newBlob(Utilities.base64Decode(d.pdfBase64), 'application/pdf', 'prenotazione-' + d.codice + '.pdf'));
+      } catch (eAttach) {
+        Logger.log('Allegato PDF non decodificabile: ' + eAttach);
       }
+    }
+    try {
       MailApp.sendEmail({
         to: EMAIL_DESTINATARIO,
         subject: 'Nuova prenotazione 50° — ' + d.codice,
         body: d.resoconto || ('Codice: ' + d.codice),
         attachments: attachments
       });
-    } catch (e) {}
+    } catch (eMail) {
+      Logger.log('Invio email fallito: ' + eMail);
+    }
 
     return ContentService.createTextOutput('ok');
   } finally {
@@ -95,7 +111,22 @@ function doGet(e) {
 }
 ```
 
-## 3. Pubblica (rifallo ogni volta che modifichi lo script)
+## 3. Autorizza l'invio email (una volta sola)
+Aggiungere per la prima volta una chiamata a un servizio Google (qui `MailApp`, per mandare
+email) a uno script già esistente non basta a farla funzionare da una richiesta web: va
+autorizzata a mano, una sola volta, dall'editor.
+
+1. Nell'editor di Apps Script, dal menu a tendina delle funzioni in alto scegli
+   `autorizzaInvioEmail`, poi premi **Esegui**.
+2. La prima volta compare **Autorizzazione richiesta**: scegli il tuo account → se vedi "Google
+   non ha verificato questa app", clicca **Avanzate** → **Vai a (nome progetto), non sicuro** →
+   **Consenti**. È normale ed è lo stesso avviso che vedi per qualunque script personale non
+   pubblicato sul Marketplace — lo stai autorizzando tu, sul tuo account, non un'app di terzi.
+3. Se tutto va bene, arriva subito una mail di prova a `EMAIL_DESTINATARIO`: l'invio è ora
+   autorizzato. Se **Esegui** mostra un errore invece, quell'errore (visibile subito in basso
+   nell'editor) è la causa reale per cui le email non partono — non serve indovinare altro.
+
+## 4. Pubblica (rifallo ogni volta che modifichi lo script)
 **Distribuisci → Gestisci distribuzioni → Modifica (icona matita) → Versione: Nuova versione → Distribuisci**
 - Esegui come: **me** (l'account del gruppo)
 - Chi ha accesso: **Tutti**  ← passaggio più importante: se resta "Solo io" o "Chiunque abbia un
@@ -108,7 +139,7 @@ Copia l'URL `https://script.google.com/macros/s/.../exec` (deve finire con `/exe
 > Se lo script viene modificato ma non ridistribuito con **Nuova versione**, l'URL continua a
 > eseguire la versione vecchia: è la causa più comune di "funzionava e ora non più".
 
-## 4. Verifica lo script DA SOLO, prima di collegarlo alla pagina
+## 5. Verifica lo script DA SOLO, prima di collegarlo alla pagina
 Questo passaggio salta il browser e l'HTML: apre l'URL direttamente, così scopri subito se il
 problema è nella distribuzione (qui) o nella pagina.
 
@@ -119,35 +150,39 @@ problema è nella distribuzione (qui) o nella pagina.
    - **`ok`** in testo semplice → la distribuzione funziona, e dovresti trovare una riga `TEST-1`
      nel foglio (cancellala dopo). Questo test minimo non include il PDF (non c'è nella query di
      prova), ma l'email parte comunque, senza allegato: controlla che sia arrivata a
-     `EMAIL_DESTINATARIO` come ulteriore conferma che tutta la catena funziona. Passa al punto 5.
+     `EMAIL_DESTINATARIO` come ulteriore conferma che tutta la catena funziona. Passa al punto 6.
    - **Una pagina di login Google / "Accedi"** → l'accesso della distribuzione non è su **Tutti**.
-     Torna al punto 3.
+     Torna al punto 4.
    - **Errore Apps Script (schermata rossa, "Eccezione…")** → il codice ha un problema; controlla
      di aver incollato lo script del punto 2 senza modifiche e di aver salvato.
    - **404 / "pagina non trovata"** → l'URL è sbagliato: hai incollato il link del foglio
      (`docs.google.com/spreadsheets/...`) invece dell'URL dello script, oppure manca `/exec`.
 3. Se hai visto `ok`, sei a posto: lo script funziona a prescindere dalla pagina.
 
-## 5. Incolla l'URL nella pagina
+## 6. Incolla l'URL nella pagina
 Apri i **Tweaks** del listino → sezione *Ordini* → campo **endpointOrdini**: incolla l'URL `/exec`
-verificato al punto 4.
+verificato al punto 5.
 
 ## Se una conferma non arriva
 La pagina lo dice solo se il browser è davvero offline: in tutti gli altri casi (deploy sbagliato,
 accesso non su "Tutti", ecc.) la pagina non può accorgersi dell'errore — per il browser la
-richiesta "è partita" anche se Google la rifiuta in silenzio. Ecco perché il punto 4 (verifica
+richiesta "è partita" anche se Google la rifiuta in silenzio. Ecco perché il punto 5 (verifica
 diretta dell'URL, fuori dalla pagina) è il modo più veloce per capire se il problema è lo script o
 qualcos'altro.
 
 Cause tipiche, in ordine di frequenza:
-- script non ridistribuito dopo una modifica (vedi punto 3);
+- script non ridistribuito dopo una modifica (vedi punto 4);
 - accesso della distribuzione non impostato su **Tutti**;
 - URL incollato con `/dev` invece di `/exec`, o il link del foglio invece dello script.
 
 ## Se il foglio si aggiorna ma l'email no
-L'invio email è isolato nel suo try/catch: un problema lì (quota giornaliera di `MailApp`
-esaurita — circa 100 al giorno su un account Google normale, allegato troppo grande, indirizzo in
-`EMAIL_DESTINATARIO` scritto male) non fa mai sparire la riga sul foglio, quindi il foglio resta la
-fonte affidabile anche se qualche email non arriva. Controlla **Esecuzioni** nell'editor di Apps
-Script: se l'esecuzione compare senza errori ma l'email non arriva, guarda anche nello spam del
-destinatario.
+Prima cosa da provare: il punto 3 (**Autorizza l'invio email**) — se non l'hai ancora fatto, ogni
+tentativo di mandare email dalla web app fallisce in silenzio, ed è la causa più comune di questo
+identico sintomo ("il foglio funziona, la mail no").
+
+Se il punto 3 è già a posto e ancora non arriva: l'invio email è isolato nel suo try/catch (quota
+giornaliera di `MailApp` esaurita — circa 100 al giorno su un account Google normale, allegato non
+decodificabile, indirizzo in `EMAIL_DESTINATARIO` scritto male) e ora registra l'errore invece di
+ignorarlo. Apri **Esecuzioni** nell'editor di Apps Script, apri l'esecuzione più recente e guarda
+i log (`Logger.log`): dicono esattamente cosa è andato storto. Se l'esecuzione non mostra nessun
+errore ma l'email ancora non si vede, controlla anche lo spam del destinatario.
