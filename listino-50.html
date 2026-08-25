@@ -363,11 +363,17 @@ class Component extends DCLogic {
     return { pieces: pieces, label: complete ? this.euro(sum) : 'da definire' };
   }
 
-  /* L'invio deve passare anche dove fetch verso domini esterni e' bloccato
-     (artefatto pubblicato, CSP): tre tentativi in cascata. */
+  /* Con mode:'no-cors' il fetch risulta "riuscito" (risposta opaca) anche quando
+     Apps Script rifiuta o reindirizza la richiesta: il vecchio fallback a cascata
+     (.catch(formPost).catch(imgGet)) di fatto non scattava quasi mai, perche' il
+     primo fetch non fallisce quasi mai lato browser. Ora i tre canali partono
+     tutti insieme, cosi' se uno perde il corpo della richiesta durante un
+     redirect gli altri due comunque arrivano; Apps Script scarta i doppioni per
+     codice (vedi drive-foglio-ordini.md). Il fallimento vero (e l'unico che
+     mostriamo all'utente) resta solo l'errore di rete del fetch, es. offline. */
   send(url, payload) {
     const body = JSON.stringify(payload);
-    const formPost = () => new Promise((res, rej) => {
+    const formPost = () => new Promise(res => {
       try {
         const name = 'cm1sink' + Date.now();
         const fr = document.createElement('iframe');
@@ -379,22 +385,21 @@ class Component extends DCLogic {
         i.type = 'hidden'; i.name = 'payload'; i.value = body;
         f.appendChild(i); document.body.appendChild(f);
         let settled = false;
+        const cleanup = () => { f.remove(); setTimeout(() => fr.remove(), 500); };
         fr.onload = () => { if (!settled) { settled = true; res(); } };
         f.submit();
         setTimeout(() => { if (!settled) { settled = true; res(); } cleanup(); }, 6000);
-        const cleanup = () => { f.remove(); setTimeout(() => fr.remove(), 500); };
-        setTimeout(cleanup, 6500);
-      } catch (e) { rej(e); }
+      } catch (e) { res(); }
     });
-    const imgGet = () => new Promise((res, rej) => {
+    const imgGet = () => new Promise(res => {
       const img = new Image();
-      img.onload = () => res(); img.onerror = () => rej(new Error('img'));
+      img.onload = img.onerror = () => res();
       img.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'p=' + encodeURIComponent(body);
       setTimeout(() => res(), 5000);
     });
-    return fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body })
-      .catch(formPost)
-      .catch(imgGet);
+    formPost();
+    imgGet();
+    return fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body });
   }
 
   componentDidMount() {
