@@ -17,26 +17,45 @@ salva (icona dischetto o Ctrl/Cmd+S).
 Accetta i tre modi in cui la pagina può inviare i dati (JSON via `fetch`, modulo nascosto,
 richiesta GET): serve perché il browser, quando la pagina è pubblicata (GitHub Pages o artefatto),
 a volte perde il corpo della richiesta POST durante il redirect che Google fa verso `/exec`. La
-pagina ora manda tutti e tre i canali insieme invece che uno alla volta; il controllo sul codice
-qui sotto evita righe doppie.
+pagina manda tutti e tre i canali insieme invece che uno alla volta (così se uno perde il corpo per
+strada, gli altri due arrivano comunque); **proprio perché arrivano insieme**, lo script usa un
+blocco (`LockService`) per evitare che due arrivi quasi simultanei dello stesso ordine finiscano
+per scrivere due righe invece di una — senza il blocco, entrambi potrebbero leggere il foglio
+"prima" che l'altro abbia scritto, e non vedersi a vicenda.
+
+> **Se avevi già incollato una versione precedente di questo script**, sostituiscila con questa:
+> aggiunge il blocco anti-doppioni e non si blocca più su un payload malformato (prima, un invio
+> troncato o corrotto faceva fallire l'intera esecuzione invece di limitarsi a scartarlo).
 
 ```js
 function handle(raw) {
   if (!raw) return ContentService.createTextOutput('vuoto');
-  var d = JSON.parse(raw);
-  var sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+  var d;
+  try { d = JSON.parse(raw); } catch (e) { return ContentService.createTextOutput('payload non valido'); }
+  if (!d || !d.codice) return ContentService.createTextOutput('payload non valido');
 
-  // già registrato? esci (evita doppioni dai tentativi multipli)
-  var codici = sh.getRange(1, 2, Math.max(sh.getLastRow(), 1), 1).getValues();
-  for (var i = 0; i < codici.length; i++) {
-    if (codici[i][0] === d.codice) return ContentService.createTextOutput('già presente');
+  // Blocco: i tre canali (fetch, modulo, GET) mandano lo stesso ordine quasi in
+  // contemporanea. Senza questo lock, due esecuzioni potrebbero leggere il foglio
+  // prima che l'altra abbia scritto e finire per duplicare la riga.
+  var lock = LockService.getScriptLock();
+  lock.waitLock(30000);
+  try {
+    var sh = SpreadsheetApp.getActiveSpreadsheet().getSheets()[0];
+
+    // già registrato? esci (evita doppioni dai tentativi multipli)
+    var codici = sh.getRange(1, 2, Math.max(sh.getLastRow(), 1), 1).getValues();
+    for (var i = 0; i < codici.length; i++) {
+      if (codici[i][0] === d.codice) return ContentService.createTextOutput('già presente');
+    }
+
+    (d.articoli || []).forEach(function (a) {
+      sh.appendRow([new Date(), d.codice, d.nome, d.unita, d.contatto,
+                    a.articolo, a.colore, a.taglia, a.quantita, a.prezzo, d.note]);
+    });
+    return ContentService.createTextOutput('ok');
+  } finally {
+    lock.releaseLock();
   }
-
-  (d.articoli || []).forEach(function (a) {
-    sh.appendRow([new Date(), d.codice, d.nome, d.unita, d.contatto,
-                  a.articolo, a.colore, a.taglia, a.quantita, a.prezzo, d.note]);
-  });
-  return ContentService.createTextOutput('ok');
 }
 
 function doPost(e) {
