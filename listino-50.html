@@ -367,9 +367,10 @@ class Component extends DCLogic {
      Apps Script rifiuta o reindirizza la richiesta: il vecchio fallback a cascata
      (.catch(formPost).catch(imgGet)) di fatto non scattava quasi mai, perche' il
      primo fetch non fallisce quasi mai lato browser. Ora i tre canali partono
-     tutti insieme, cosi' se uno perde il corpo della richiesta durante un
-     redirect gli altri due comunque arrivano; Apps Script scarta i doppioni per
-     codice (vedi drive-foglio-ordini.md). Il fallimento vero (e l'unico che
+     tutti insieme (Apps Script scarta i doppioni per codice, vedi
+     drive-foglio-ordini.md) e la conferma in pagina aspetta che tutti e tre
+     abbiano finito, non solo il primo, cosi' chi prenota non chiude la scheda
+     mentre gli altri due sono ancora in volo. Il fallimento vero (e l'unico che
      mostriamo all'utente) resta solo l'errore di rete del fetch, es. offline. */
   send(url, payload) {
     const body = JSON.stringify(payload);
@@ -397,9 +398,19 @@ class Component extends DCLogic {
       img.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'p=' + encodeURIComponent(body);
       setTimeout(() => res(), 5000);
     });
-    formPost();
-    imgGet();
-    return fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body });
+    // Il canale via <img> passa i dati nella query string: un carrello con molti
+    // articoli puo' superare i limiti di lunghezza URL (browser o lato Google) e
+    // arrivare troncato. E' solo un canale extra di ridondanza (fetch e modulo non
+    // hanno questo limite), quindi lo saltiamo se il payload e' troppo lungo invece
+    // di rischiare di mandare un JSON tagliato a meta'.
+    const skipImg = encodeURIComponent(body).length >= 1500;
+    const fetchPost = () => fetch(url, { method: 'POST', mode: 'no-cors', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: body })
+      .then(() => true).catch(() => false);
+    // Aspettiamo che tutti e tre i tentativi finiscano (invece di mostrare la
+    // conferma non appena il primo risponde) cosi' chi prenota non chiude la
+    // scheda prima che gli altri due canali abbiano fatto in tempo a partire.
+    return Promise.all([fetchPost(), formPost(), skipImg ? Promise.resolve(true) : imgGet()])
+      .then(([fetchOk]) => { if (!fetchOk) throw new Error('rete non raggiungibile'); });
   }
 
   componentDidMount() {
