@@ -143,7 +143,10 @@
         <sc-if value="{{ confirmed }}" hint-placeholder-val="{{ false }}">
           <div style="display: grid; gap: 16px">
             <p style="font-size: 15px; line-height: 24px; margin: 0">Prenotazione registrata. Il tuo codice:</p>
-            <p style="font-family: var(--font-heading); font-size: 26px; line-height: 32px; margin: 0; color: var(--color-accent-300); font-feature-settings: 'tnum' 1">{{ code }}</p>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <p style="font-family: var(--font-heading); font-size: 26px; line-height: 32px; margin: 0; color: var(--color-accent-300); font-feature-settings: 'tnum' 1">{{ code }}</p>
+              <button type="button" class="btn btn-ghost" onClick="{{ onCopyCode }}">{{ copyCodeLabel }}</button>
+            </div>
             <div style="display: grid; gap: 6px; padding: 16px 0; border-top: 1px solid var(--color-divider); border-bottom: 1px solid var(--color-divider)">
               <sc-for list="{{ confirmedRows }}" as="c" hint-placeholder-count="2">
                 <p style="font-size: 14px; line-height: 22px; margin: 0">{{ c.line }}</p>
@@ -325,6 +328,29 @@ class Component extends DCLogic {
 
   euro(n) { return n.toFixed(2).replace('.', ',') + ' \u20ac'; }
 
+  copyCode() {
+    const text = this.state.code || '';
+    const done = () => {
+      this.setState({ copied: true });
+      clearTimeout(this._copyResetT);
+      this._copyResetT = setTimeout(() => this.setState({ copied: false }), 2000);
+    };
+    const legacyCopy = () => {
+      try {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.focus(); ta.select();
+        document.execCommand('copy'); ta.remove();
+        done();
+      } catch (e) {}
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(done, legacyCopy);
+    } else {
+      legacyCopy();
+    }
+  }
+
   add(it) {
     const s = this.sel(it);
     const key = it.id + '|' + s.color + '|' + s.size;
@@ -504,7 +530,8 @@ class Component extends DCLogic {
       hasRows: this.state.rows.length > 0,
       totalPieces: t.pieces + (t.pieces === 1 ? ' pezzo' : ' pezzi'),
       totalLabel: t.label,
-      copyLabel: this.state.copied ? 'Foglio scaricato' : 'Scarica il foglio ordine',
+      copyCodeLabel: this.state.copied ? 'Copiato ✓' : 'Copia codice',
+      onCopyCode: () => this.copyCode(),
       onNome: field('nome'), onContatto: field('contatto'), onNote: field('note'),
       panelTitle: this.state.code ? 'Confermata' : 'Carrello',
       confirmed: !!this.state.code,
@@ -517,7 +544,7 @@ class Component extends DCLogic {
         : (this.state.rows.length === 0
             ? 'Aggiungi almeno un articolo, poi conferma: la prenotazione arriva ai capi.'
             : 'Conferma e ti diamo un codice. ' + ritiro + '.'),
-      onReset: () => this.setState({ rows: [], code: null, sentRows: [], error: null }),
+      onReset: () => this.setState({ rows: [], code: null, sentRows: [], error: null, copied: false }),
       onConfirm: () => {
         const f = this.state.form;
         const nome = (f.nome || '').trim();
