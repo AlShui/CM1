@@ -182,7 +182,9 @@
         </sc-if>
 
         <div style="display: grid; gap: 12px; margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--color-divider)">
-          <label class="field"><span>Nome e cognome *</span><input class="input" type="text" required="" onInput="{{ onNome }}"></label>
+          <label class="field"><span>Nome *</span><input class="input" type="text" required="" onInput="{{ onNome }}"></label>
+
+          <label class="field"><span>Cognome *</span><input class="input" type="text" required="" onInput="{{ onCognome }}"></label>
 
           <label class="field"><span>Telefono o email *</span><input class="input" type="text" required="" onInput="{{ onContatto }}"></label>
           <label class="field"><span>Note</span><input class="input" type="text" placeholder="Taglie bambino, richieste…" onInput="{{ onNote }}"></label>
@@ -324,6 +326,13 @@ class Component extends DCLogic {
 
   euro(n) { return n.toFixed(2).replace('.', ',') + ' \u20ac'; }
 
+  // Nome e cognome sono due campi separati nel modulo ma una sola colonna
+  // "Nome" sul foglio: questo e' l'unico punto dove vengono uniti, cosi'
+  // PDF, resoconto email e riga sul foglio restano sempre coerenti tra loro.
+  fullName(f) {
+    return ((f.nome || '').trim() + ' ' + (f.cognome || '').trim()).trim();
+  }
+
   copyCode() {
     const text = this.state.code || '';
     const done = () => {
@@ -431,7 +440,7 @@ class Component extends DCLogic {
       { text: '', size: 11 },
       { text: 'Codice: ' + code, size: 14 },
       { text: 'Data: ' + (confirmedAt || new Date()).toLocaleString('it-IT'), size: 11 },
-      { text: 'Nome: ' + (f.nome || '').trim(), size: 11 },
+      { text: 'Nome: ' + this.fullName(f), size: 11 },
       { text: 'Contatto: ' + (f.contatto || '').trim(), size: 11 }
     ];
     if ((f.note || '').trim()) lines.push({ text: 'Note: ' + f.note.trim(), size: 11 });
@@ -484,7 +493,7 @@ class Component extends DCLogic {
     });
     const t = this.totals();
     lines.push('', 'Totale pezzi: ' + t.pieces, 'Totale: ' + t.label, '');
-    lines.push('Nome: ' + ((f.nome || '').trim() || '-'));
+    lines.push('Nome: ' + (this.fullName(f) || '-'));
     lines.push('Contatto: ' + ((f.contatto || '').trim() || '-'));
     if ((f.note || '').trim()) lines.push('Note: ' + f.note.trim());
     return lines.join('\n');
@@ -645,7 +654,7 @@ class Component extends DCLogic {
       copyCodeLabel: this.state.copied ? 'Copiato ✓' : 'Copia codice',
       onCopyCode: () => this.copyCode(),
       onDownloadPdf: () => this.downloadOrderPdf(),
-      onNome: field('nome'), onContatto: field('contatto'), onNote: field('note'),
+      onNome: field('nome'), onCognome: field('cognome'), onContatto: field('contatto'), onNote: field('note'),
       panelTitle: this.state.code ? 'Confermata' : 'Carrello',
       confirmed: !!this.state.code,
       pending: !this.state.code,
@@ -661,15 +670,16 @@ class Component extends DCLogic {
       onConfirm: () => {
         const f = this.state.form;
         const nome = (f.nome || '').trim();
+        const cognome = (f.cognome || '').trim();
         const contatto = (f.contatto || '').trim();
         if (this.state.rows.length === 0) { this.setState({ error: 'Aggiungi almeno un articolo prima di confermare.' }); return; }
-        if (!nome || !contatto) { this.setState({ error: 'Nome e cognome e un contatto (telefono o email) sono obbligatori.' }); return; }
+        if (!nome || !cognome || !contatto) { this.setState({ error: 'Nome, cognome e un contatto (telefono o email) sono obbligatori.' }); return; }
         const code = 'CM1-50-' + Math.random().toString(36).slice(2, 6).toUpperCase();
         const rows = this.state.rows.slice();
         const now = new Date();
         const payload = {
           codice: code, data: now.toISOString(),
-          nome: nome, contatto: contatto, note: f.note || '',
+          nome: this.fullName(f), contatto: contatto, note: f.note || '',
           totale: this.totals().label,
           articoli: rows.map(r => {
             const p = this.price(this.catalog.find(c => c.id === r.id));
